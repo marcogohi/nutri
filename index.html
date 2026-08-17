@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Historial de dietas — Marco</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M6 22l6-8 5 5 9-12' stroke='white' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Historial de dietas y composición corporal</h1>
+      <p>Marco González Hierro · 1,82 m · CrossFit · nutricionista Josu Zubillaga · 7 etapas (2019–2022)</p>
+    </div>
+    <button id="theme-toggle" type="button">◐ Auto</button>
+  </header>
+
+  <section id="chart-section">
+    <h2>Evolución del peso</h2>
+    <p class="section-sub">Cada punto es una etapa registrada. Pasa el cursor para ver los datos, haz click para ver el detalle completo.</p>
+    <div id="chart-wrap">
+      <svg id="chart-svg"></svg>
+      <div id="chart-tooltip"></div>
+    </div>
+    <div id="chart-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-definicion)"></span>Definición</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-dieta_inversa)"></span>Dieta inversa</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-ganancia_muscular)"></span>Ganancia muscular</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-rendimiento)"></span>Rendimiento</span>
+    </div>
+  </section>
+
+  <section id="timeline-section">
+    <h2>Etapas</h2>
+    <p class="section-sub">Filtra por tipo de fase y haz click en una etapa para ver el plan completo.</p>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div id="timeline-grid"></div>
+  </section>
+
+  <section id="compare-section">
+    <h2>Comparador de etapas</h2>
+    <p class="section-sub">Selecciona dos etapas para verlas lado a lado.</p>
+    <div class="compare-selects">
+      <div>
+        <label for="compare-a">Etapa A</label>
+        <select id="compare-a"></select>
+      </div>
+      <div>
+        <label for="compare-b">Etapa B</label>
+        <select id="compare-b"></select>
+      </div>
+    </div>
+    <div id="compare-grid"></div>
+  </section>
+
+  <section id="log-section">
+    <h2>Registro de peso propio</h2>
+    <p class="section-sub">Añade tu peso periódicamente para seguir tu progreso actual. Se guarda en este navegador (localStorage).</p>
+    <form id="weight-form">
+      <div class="field">
+        <label for="log-fecha">Fecha</label>
+        <input type="date" id="log-fecha" required />
+      </div>
+      <div class="field">
+        <label for="log-peso">Peso (kg)</label>
+        <input type="number" id="log-peso" step="0.1" min="30" max="250" placeholder="Ej. 85.4" required />
+      </div>
+      <button type="submit">Añadir</button>
+    </form>
+
+    <div class="stat-row" id="log-stats"></div>
+    <div id="log-chart-wrap"></div>
+
+    <p class="empty-msg" id="log-empty">Todavía no has añadido ningún registro.</p>
+    <div id="log-table-wrap">
+      <table class="log-table">
+        <thead><tr><th>Fecha</th><th>Peso</th><th></th></tr></thead>
+        <tbody id="log-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<dialog id="detail-dialog">
+  <div id="detail-content"></div>
+</dialog>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
