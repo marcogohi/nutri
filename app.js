@@ -416,6 +416,7 @@ function openDetail(id) {
     saveActivePlan(cloneActivePlanFromEtapa(etapa.id));
     planEditMode = true;
     dialog.close();
+    activateTab("hoy");
     buildActivePlanSection();
     document.getElementById("active-plan-section").scrollIntoView({ behavior: "smooth" });
   });
@@ -971,10 +972,29 @@ function initTheme() {
   });
 }
 
+/* ====================== Pestañas ====================== */
+
+const TAB_KEY = "nutri_tab_activa";
+
+function activateTab(tab) {
+  document.querySelectorAll(".tab-btn").forEach((btn) => btn.setAttribute("aria-selected", String(btn.dataset.tab === tab)));
+  document.querySelectorAll("section[data-view]").forEach((sec) => sec.classList.toggle("active-view", sec.dataset.view === tab));
+  localStorage.setItem(TAB_KEY, tab);
+}
+
+function initTabs() {
+  const tabs = document.querySelectorAll(".tab-btn");
+  const stored = localStorage.getItem(TAB_KEY);
+  const initial = stored && [...tabs].some((t) => t.dataset.tab === stored) ? stored : "hoy";
+  tabs.forEach((btn) => btn.addEventListener("click", () => activateTab(btn.dataset.tab)));
+  activateTab(initial);
+}
+
 /* ====================== Init ====================== */
 
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
+  initTabs();
   buildActivePlanSection();
   buildMainChart();
   buildFilterBar();

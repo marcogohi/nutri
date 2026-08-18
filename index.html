@@ -18,50 +18,18 @@
     <button id="theme-toggle" type="button">◐ Auto</button>
   </header>
 
-  <section id="active-plan-section">
+  <nav class="tabs" id="tabs" role="tablist">
+    <button type="button" class="tab-btn" data-tab="hoy" role="tab">Hoy</button>
+    <button type="button" class="tab-btn" data-tab="registro" role="tab">Peso</button>
+    <button type="button" class="tab-btn" data-tab="historico" role="tab">Histórico</button>
+  </nav>
+
+  <section id="active-plan-section" data-view="hoy">
     <h2>Mi dieta actual</h2>
     <div id="active-plan-content"></div>
   </section>
 
-  <section id="chart-section">
-    <h2>Evolución del peso <span style="color:var(--text-muted);font-weight:400;font-size:13px;">(histórico)</span></h2>
-    <p class="section-sub">Cada punto es una etapa registrada. Pasa el cursor para ver los datos, haz click para ver el detalle completo.</p>
-    <div id="chart-wrap">
-      <svg id="chart-svg"></svg>
-      <div id="chart-tooltip"></div>
-    </div>
-    <div id="chart-legend">
-      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-definicion)"></span>Definición</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-dieta_inversa)"></span>Dieta inversa</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-ganancia_muscular)"></span>Ganancia muscular</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-rendimiento)"></span>Rendimiento</span>
-    </div>
-  </section>
-
-  <section id="timeline-section">
-    <h2>Etapas</h2>
-    <p class="section-sub">Filtra por tipo de fase y haz click en una etapa para ver el plan completo — o usarla como plantilla para tu dieta actual.</p>
-    <div class="filter-bar" id="filter-bar"></div>
-    <div id="timeline-grid"></div>
-  </section>
-
-  <section id="compare-section">
-    <h2>Comparador de etapas</h2>
-    <p class="section-sub">Selecciona dos etapas para verlas lado a lado.</p>
-    <div class="compare-selects">
-      <div>
-        <label for="compare-a">Etapa A</label>
-        <select id="compare-a"></select>
-      </div>
-      <div>
-        <label for="compare-b">Etapa B</label>
-        <select id="compare-b"></select>
-      </div>
-    </div>
-    <div id="compare-grid"></div>
-  </section>
-
-  <section id="log-section">
+  <section id="log-section" data-view="registro">
     <h2>Registro de peso propio</h2>
     <p class="section-sub">Añade tu peso periódicamente para seguir tu progreso actual. Se guarda en este navegador (localStorage).</p>
     <form id="weight-form">
@@ -86,6 +54,44 @@
         <tbody id="log-tbody"></tbody>
       </table>
     </div>
+  </section>
+
+  <section id="chart-section" data-view="historico">
+    <h2>Evolución del peso <span style="color:var(--text-muted);font-weight:400;font-size:13px;">(histórico)</span></h2>
+    <p class="section-sub">Cada punto es una etapa registrada. Pasa el cursor para ver los datos, haz click para ver el detalle completo.</p>
+    <div id="chart-wrap">
+      <svg id="chart-svg"></svg>
+      <div id="chart-tooltip"></div>
+    </div>
+    <div id="chart-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-definicion)"></span>Definición</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-dieta_inversa)"></span>Dieta inversa</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-ganancia_muscular)"></span>Ganancia muscular</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--fase-rendimiento)"></span>Rendimiento</span>
+    </div>
+  </section>
+
+  <section id="timeline-section" data-view="historico">
+    <h2>Etapas</h2>
+    <p class="section-sub">Filtra por tipo de fase y haz click en una etapa para ver el plan completo — o usarla como plantilla para tu dieta actual.</p>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div id="timeline-grid"></div>
+  </section>
+
+  <section id="compare-section" data-view="historico">
+    <h2>Comparador de etapas</h2>
+    <p class="section-sub">Selecciona dos etapas para verlas lado a lado.</p>
+    <div class="compare-selects">
+      <div>
+        <label for="compare-a">Etapa A</label>
+        <select id="compare-a"></select>
+      </div>
+      <div>
+        <label for="compare-b">Etapa B</label>
+        <select id="compare-b"></select>
+      </div>
+    </div>
+    <div id="compare-grid"></div>
   </section>
 
 </div>
