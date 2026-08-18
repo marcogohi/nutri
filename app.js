@@ -1,3 +1,100 @@
+/* ====================== Iconos (SVG propios, sin librerías externas) ====================== */
+
+const ICON_PATHS = {
+  flame: `<polygon points="12,2 15,9 19,13 16,22 8,22 5,13 9,9" fill="currentColor"/>`,
+  swap: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3,7 18,7"/><polyline points="14,3 18,7 14,11"/>
+    <polyline points="21,17 6,17"/><polyline points="10,13 6,17 10,21"/>
+  </g>`,
+  dumbbell: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="1" y="9" width="3" height="6" rx="1"/><rect x="20" y="9" width="3" height="6" rx="1"/>
+    <rect x="5" y="6" width="3" height="12" rx="1"/><rect x="16" y="6" width="3" height="12" rx="1"/>
+    <line x1="8" y1="12" x2="16" y2="12"/>
+  </g>`,
+  bolt: `<polygon points="13,2 5,14 11,14 10,22 19,10 13,10" fill="currentColor"/>`,
+  coffee: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9h13v7a4 4 0 01-4 4H8a4 4 0 01-4-4V9z"/><path d="M17 11h1.5a2.5 2.5 0 010 5H17"/>
+    <line x1="7" y1="2" x2="7" y2="5"/><line x1="11" y1="2" x2="11" y2="5"/>
+  </g>`,
+  plate: `<g fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></g>`,
+  cookie: `<g><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+    <g fill="currentColor"><circle cx="8" cy="8" r="1.3"/><circle cx="14" cy="7" r="1.1"/><circle cx="16" cy="13" r="1.2"/><circle cx="10" cy="15" r="1.3"/><circle cx="13" cy="11" r="1"/></g>
+  </g>`,
+  moon: `<path d="M20.5 14.5A8.5 8.5 0 119.5 3.5a7 7 0 0011 11z" fill="currentColor"/>`,
+  briefcase: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="7" y="4" width="10" height="5"/><rect x="2" y="8" width="20" height="12" rx="2"/><line x1="2" y1="13" x2="22" y2="13"/>
+  </g>`,
+  apple: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="14" r="7"/><line x1="12" y1="7" x2="12" y2="3"/>
+    <polygon points="12,3 16,4 12,6" fill="currentColor" stroke="none"/>
+  </g>`,
+  sun: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/>
+    <line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/>
+    <line x1="4.5" y1="4.5" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.5" y2="19.5"/>
+    <line x1="4.5" y1="19.5" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.5" y2="4.5"/>
+  </g>`,
+  scale: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="8" width="20" height="13" rx="4"/><rect x="9" y="12" width="6" height="3" rx="1" fill="currentColor"/>
+  </g>`,
+  trending: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3,17 9,11 13,15 21,6"/><polyline points="15,6 21,6 21,12"/>
+  </g>`,
+  search: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></g>`,
+  pencil: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+  </g>`,
+  shuffle: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3,3 9,3 21,21"/><polyline points="17,3 21,3 21,7"/>
+    <polyline points="3,21 9,21 21,3"/><polyline points="3,17 3,21 7,21"/>
+  </g>`,
+  pulse: `<polyline points="2,12 7,12 10,4 14,20 17,12 22,12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+  layers: `<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="12,3 21,8 12,13 3,8"/><polyline points="3,14 12,19 21,14"/>
+  </g>`,
+};
+
+const FASE_ICONS = { definicion: "flame", dieta_inversa: "swap", ganancia_muscular: "dumbbell", rendimiento: "bolt" };
+const MEAL_ICONS = { desayuno: "coffee", almuerzo: "apple", curro: "briefcase", entre_horas: "apple", comida: "plate", merienda: "cookie", mm: "apple", cena: "moon" };
+
+function icon(name, size, extraClass) {
+  const inner = ICON_PATHS[name] || "";
+  return `<svg class="icon${extraClass ? " " + extraClass : ""}" width="${size || 18}" height="${size || 18}" viewBox="0 0 24 24">${inner}</svg>`;
+}
+
+function mealIcon(mealKey, size) {
+  return icon(MEAL_ICONS[mealKey] || "plate", size);
+}
+
+function faseIcon(tipoFase, size) {
+  return icon(FASE_ICONS[tipoFase] || "flame", size);
+}
+
+function faseBadge(tipoFase, containerSize) {
+  const cs = containerSize || 24;
+  return `<span class="fase-badge" style="--badge-color:${fasecolor(tipoFase)};width:${cs}px;height:${cs}px;">${faseIcon(tipoFase, Math.round(cs * 0.6))}</span>`;
+}
+
+// Anillo de progreso SVG para métricas 0-100%, con pista en un tono más claro del mismo color
+function ringMeter(percent, opts) {
+  opts = opts || {};
+  const size = opts.size || 56;
+  const stroke = opts.stroke || 6;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = percent == null ? 0 : Math.max(0, Math.min(100, percent));
+  const dash = (pct / 100) * c;
+  const center = size / 2;
+  return `
+    <svg class="ring-meter" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${center}" cy="${center}" r="${r}" fill="none" stroke="var(--ring-track)" stroke-width="${stroke}"/>
+      <circle cx="${center}" cy="${center}" r="${r}" fill="none" stroke="var(--series-line)" stroke-width="${stroke}"
+        stroke-linecap="round" stroke-dasharray="${dash} ${c - dash}" transform="rotate(-90 ${center} ${center})"/>
+      <text x="${center}" y="${center + 1}" text-anchor="middle" dominant-baseline="middle" class="ring-meter-label">${percent == null ? "—" : Math.round(percent) + "%"}</text>
+    </svg>
+  `;
+}
+
 /* ====================== Helpers de datos ====================== */
 
 const FASE_LABELS = {
@@ -335,9 +432,12 @@ function buildTimeline() {
     card.className = "etapa-card";
     card.style.setProperty("--fase-color", fasecolor(e.tipo_fase));
     card.innerHTML = `
-      <span class="card-fecha">${formatFechaCorta(e.fecha)} · ${e.edad} años</span>
+      <span class="card-top-row">
+        <span class="card-fecha">${formatFechaCorta(e.fecha)} · ${e.edad} años</span>
+        ${faseBadge(e.tipo_fase, 15)}
+      </span>
       <span class="card-peso">${pesoDisplay(e.composicion.peso_kg)}</span>
-      <span class="card-fase"><span class="legend-dot" style="background:${fasecolor(e.tipo_fase)}"></span>${FASE_LABELS[e.tipo_fase]}</span>
+      <span class="card-fase">${FASE_LABELS[e.tipo_fase]}</span>
       <span class="card-objetivo">${e.objetivo}</span>
     `;
     card.addEventListener("click", () => openDetail(e.id));
@@ -397,8 +497,8 @@ function renderDetail(etapa) {
       </div>
       <button class="close-btn" id="detail-close" aria-label="Cerrar">&times;</button>
     </div>
-    <span class="badge"><span class="legend-dot" style="background:${fasecolor(etapa.tipo_fase)}"></span>${FASE_LABELS[etapa.tipo_fase]}${metric ? ` · ${metric.label} ${metric.value}` : ""}</span>
-    <button type="button" class="secondary-btn" id="use-as-template-btn" data-etapa-id="${etapa.id}" style="float:right;margin-top:-4px;">Usar como plantilla para mi dieta actual</button>
+    <span class="badge">${faseBadge(etapa.tipo_fase, 13)}${FASE_LABELS[etapa.tipo_fase]}${metric ? ` · ${metric.label} ${metric.value}` : ""}</span>
+    <button type="button" class="secondary-btn" id="use-as-template-btn" data-etapa-id="${etapa.id}" style="float:right;margin-top:-4px;">${icon("layers", 14)} Usar como plantilla</button>
 
     <div class="detail-block" style="clear:both;">
       <h4>Objetivo</h4>
@@ -498,7 +598,7 @@ function comparadorColumn(etapa) {
 
   return `
     <div class="compare-col">
-      <span class="badge"><span class="legend-dot" style="background:${fasecolor(etapa.tipo_fase)}"></span>${FASE_LABELS[etapa.tipo_fase]}</span>
+      <span class="badge">${faseBadge(etapa.tipo_fase, 13)}${FASE_LABELS[etapa.tipo_fase]}</span>
       <h3>${pesoDisplay(etapa.composicion.peso_kg)}</h3>
       <span class="card-fecha">${formatFechaCorta(etapa.fecha)} · ${etapa.edad} años</span>
 
@@ -790,13 +890,14 @@ function renderChecklistItem(plan, mk, meals, etapaBase) {
   const displayText = rec.texto || meals[mk];
 
   return `
-    <div class="checklist-item-wrap" data-meal="${mk}">
+    <div class="checklist-item-wrap${rec.done ? " is-done" : ""}" data-meal="${mk}">
       <label class="checklist-item">
         <input type="checkbox" class="meal-check" data-meal="${mk}" ${rec.done ? "checked" : ""} />
+        <span class="meal-icon-badge">${mealIcon(mk, 16)}</span>
         <span><strong>${mealLabel(mk)}:</strong> <span class="meal-text">${escapeHtml(displayText)}</span>${rec.texto ? ` <span class="override-tag">(hoy, no el plan)</span>` : ""}</span>
       </label>
       <div class="checklist-actions">
-        <button type="button" class="link-btn rotate-toggle-btn" data-meal="${mk}">Ver alternativas</button>
+        <button type="button" class="link-btn rotate-toggle-btn" data-meal="${mk}">${icon("shuffle", 13)} Ver alternativas</button>
         ${rec.texto ? `<button type="button" class="link-btn revert-btn" data-meal="${mk}">Volver al plan</button>` : ""}
       </div>
       <div class="rotate-panel" data-meal="${mk}" hidden></div>
@@ -844,7 +945,7 @@ function attachChecklistItemHandlers(plan, mk, meals, etapaBase) {
       });
     }
     panel.toggleAttribute("hidden", !opening);
-    wrap.querySelector(".rotate-toggle-btn").textContent = opening ? "Ocultar alternativas" : "Ver alternativas";
+    wrap.querySelector(".rotate-toggle-btn").innerHTML = `${icon("shuffle", 13)} ${opening ? "Ocultar alternativas" : "Ver alternativas"}`;
   });
 
   const revertBtn = wrap.querySelector(".revert-btn");
@@ -873,31 +974,50 @@ function renderPlanView(plan) {
   const adherenciaHoy = loadAdherencia()[iso] || {};
   const doneToday = mealKeys.filter((mk) => normalizeMealRecord(adherenciaHoy[mk]).done).length;
   const weekPct = computeWeekAdherence(plan);
-  const pesoActual = [...loadLog()].sort((a, b) => a.fecha.localeCompare(b.fecha)).pop();
+  const comidasPct = mealKeys.length ? (doneToday / mealKeys.length) * 100 : null;
+
+  const sortedLog = [...loadLog()].sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const pesoActual = sortedLog[sortedLog.length - 1];
+  const pesoPrevio = sortedLog[sortedLog.length - 2];
+  const pesoTrend = pesoActual && pesoPrevio ? pesoActual.peso - pesoPrevio.peso : null;
+  const trendArrow = pesoTrend == null ? "" : pesoTrend > 0.05 ? "▲" : pesoTrend < -0.05 ? "▼" : "→";
 
   return `
     <div class="plan-banner">
-      <div>
-        <h3 style="margin:0 0 4px;">${escapeHtml(plan.nombre)}</h3>
-        <p style="margin:0;color:var(--text-secondary);font-size:13.5px;">${escapeHtml(plan.objetivo)}</p>
-        <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">
-          ${etapaBase ? `Basada en la etapa del ${formatFechaCorta(etapaBase.fecha)} · ` : ""}Empezada el ${formatFechaCorta(plan.fecha_inicio)}
-        </p>
+      <div class="plan-banner-title">
+        ${etapaBase ? faseBadge(etapaBase.tipo_fase, 20) : ""}
+        <div>
+          <h3>${escapeHtml(plan.nombre)}</h3>
+          <p class="plan-objetivo">${escapeHtml(plan.objetivo)}</p>
+          <p class="plan-meta">
+            ${etapaBase ? `Basada en la etapa del ${formatFechaCorta(etapaBase.fecha)} · ` : ""}Empezada el ${formatFechaCorta(plan.fecha_inicio)}
+          </p>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;flex-shrink:0;">
-        <button type="button" id="plan-edit-btn" class="secondary-btn">Editar plan</button>
+      <div class="plan-banner-actions">
+        <button type="button" id="plan-edit-btn" class="secondary-btn">${icon("pencil", 14)} Editar plan</button>
         <button type="button" id="plan-discard-btn" class="secondary-btn">Elegir otra plantilla</button>
       </div>
     </div>
 
-    <div class="stat-row">
-      <div class="stat-tile"><div class="stat-value">${pesoActual ? pesoActual.peso.toFixed(1) + " kg" : "—"}</div><div class="stat-label">Peso actual</div></div>
-      <div class="stat-tile"><div class="stat-value" id="stat-comidas-hoy">${mealKeys.length ? `${doneToday}/${mealKeys.length}` : "—"}</div><div class="stat-label">Comidas hoy</div></div>
-      <div class="stat-tile"><div class="stat-value" id="stat-cumplimiento-semana">${weekPct == null ? "—" : weekPct + "%"}</div><div class="stat-label">Cumplimiento 7 días</div></div>
+    <div class="dashboard-row">
+      <div class="dash-card dash-card-hero">
+        <span class="dash-card-icon">${icon("scale", 18)}</span>
+        <div class="dash-card-value">${pesoActual ? pesoActual.peso.toFixed(1) + " kg" : "—"}${pesoTrend != null ? `<span class="dash-trend">${trendArrow} ${Math.abs(pesoTrend).toFixed(1)}</span>` : ""}</div>
+        <div class="dash-card-label">Peso actual</div>
+      </div>
+      <div class="dash-card dash-card-ring" id="dash-comidas-hoy">
+        ${ringMeter(comidasPct, { size: 60, stroke: 6 })}
+        <div class="dash-card-sublabel">${mealKeys.length ? `${doneToday}/${mealKeys.length} comidas` : "Sin comidas hoy"}</div>
+      </div>
+      <div class="dash-card dash-card-ring" id="dash-cumplimiento-semana">
+        ${ringMeter(weekPct, { size: 60, stroke: 6 })}
+        <div class="dash-card-sublabel">Cumplimiento 7 días</div>
+      </div>
     </div>
 
     <div class="detail-block" style="margin-top:6px;">
-      <h4>Hoy es ${DAY_LABELS[wk]}${plan.entrenamiento[wk] ? ` · Entrenamiento: ${escapeHtml(plan.entrenamiento[wk])}` : ""}</h4>
+      <h4 class="today-heading">${icon("dumbbell", 15)} Hoy es ${DAY_LABELS[wk]}${plan.entrenamiento[wk] ? ` · ${escapeHtml(plan.entrenamiento[wk])}` : ""}</h4>
       ${
         mealKeys.length
           ? `<div class="checklist">${mealKeys.map((mk) => renderChecklistItem(plan, mk, meals, etapaBase)).join("")}</div>`
@@ -920,12 +1040,12 @@ function renderPlanEditor(plan) {
             .map(
               (mk) => `
             <div class="meal-edit-row" data-meal="${mk}">
-              <label>${mealLabel(mk)}</label>
+              <label>${mealIcon(mk, 14)} ${mealLabel(mk)}</label>
               <div style="display:flex;gap:6px;">
                 <textarea data-plan-day="${dk}" data-plan-meal="${mk}" rows="2">${escapeHtml(meals[mk] || "")}</textarea>
                 <button type="button" class="remove-meal-btn" title="Eliminar esta comida">&times;</button>
               </div>
-              <button type="button" class="link-btn editor-rotate-toggle-btn" data-day="${dk}" data-meal="${mk}">Buscar alternativa</button>
+              <button type="button" class="link-btn editor-rotate-toggle-btn" data-day="${dk}" data-meal="${mk}">${icon("shuffle", 13)} Buscar alternativa</button>
               <div class="rotate-panel" data-day="${dk}" data-meal="${mk}" hidden></div>
             </div>`
             )
@@ -984,12 +1104,12 @@ function wireEditorRotateButton(btn, plan, etapaBase) {
         altBtn.addEventListener("click", () => {
           textarea.value = altBtn.dataset.texto;
           panel.setAttribute("hidden", "");
-          btn.textContent = "Buscar alternativa";
+          btn.innerHTML = `${icon("shuffle", 13)} Buscar alternativa`;
         });
       });
     }
     panel.toggleAttribute("hidden", !opening);
-    btn.textContent = opening ? "Ocultar alternativas" : "Buscar alternativa";
+    btn.innerHTML = `${icon("shuffle", 13)} ${opening ? "Ocultar alternativas" : "Buscar alternativa"}`;
   });
 }
 
@@ -1014,12 +1134,12 @@ function attachEditorHandlers(plan) {
       row.className = "meal-edit-row";
       row.dataset.meal = key;
       row.innerHTML = `
-        <label>${mealLabel(key)}</label>
+        <label>${mealIcon(key, 14)} ${mealLabel(key)}</label>
         <div style="display:flex;gap:6px;">
           <textarea data-plan-day="${day}" data-plan-meal="${key}" rows="2"></textarea>
           <button type="button" class="remove-meal-btn" title="Eliminar esta comida">&times;</button>
         </div>
-        <button type="button" class="link-btn editor-rotate-toggle-btn" data-day="${day}" data-meal="${key}">Buscar alternativa</button>
+        <button type="button" class="link-btn editor-rotate-toggle-btn" data-day="${day}" data-meal="${key}">${icon("shuffle", 13)} Buscar alternativa</button>
         <div class="rotate-panel" data-day="${day}" data-meal="${key}" hidden></div>`;
       row.querySelector(".remove-meal-btn").addEventListener("click", () => row.remove());
       wireEditorRotateButton(row.querySelector(".editor-rotate-toggle-btn"), plan, etapaBase);
@@ -1065,10 +1185,16 @@ function updatePlanStats(plan) {
   const adherenciaHoy = loadAdherencia()[todayISO()] || {};
   const doneToday = mealKeys.filter((mk) => normalizeMealRecord(adherenciaHoy[mk]).done).length;
   const weekPct = computeWeekAdherence(plan);
-  const elComidas = document.getElementById("stat-comidas-hoy");
-  const elSemana = document.getElementById("stat-cumplimiento-semana");
-  if (elComidas) elComidas.textContent = mealKeys.length ? `${doneToday}/${mealKeys.length}` : "—";
-  if (elSemana) elSemana.textContent = weekPct == null ? "—" : weekPct + "%";
+  const comidasPct = mealKeys.length ? (doneToday / mealKeys.length) * 100 : null;
+
+  const elComidas = document.getElementById("dash-comidas-hoy");
+  const elSemana = document.getElementById("dash-cumplimiento-semana");
+  if (elComidas) {
+    elComidas.innerHTML = `${ringMeter(comidasPct, { size: 60, stroke: 6 })}<div class="dash-card-sublabel">${mealKeys.length ? `${doneToday}/${mealKeys.length} comidas` : "Sin comidas hoy"}</div>`;
+  }
+  if (elSemana) {
+    elSemana.innerHTML = `${ringMeter(weekPct, { size: 60, stroke: 6 })}<div class="dash-card-sublabel">Cumplimiento 7 días</div>`;
+  }
 }
 
 function attachViewHandlers(plan) {
@@ -1210,11 +1336,14 @@ function renderBankResults() {
     .map(
       (m) => `
     <div class="bank-result-item">
-      <div class="bank-result-meta">
-        <span class="legend-dot" style="background:${fasecolor(m.tipo_fase)}"></span>
-        ${formatFechaCorta(m.fecha)} · ${FASE_LABELS[m.tipo_fase]} · ${DAY_LABELS[m.dia] || m.dia} · ${mealLabel(m.mealKey)}
+      <span class="meal-icon-badge">${mealIcon(m.mealKey, 16)}</span>
+      <div class="bank-result-body">
+        <div class="bank-result-meta">
+          ${faseBadge(m.tipo_fase, 12)}
+          ${formatFechaCorta(m.fecha)} · ${FASE_LABELS[m.tipo_fase]} · ${DAY_LABELS[m.dia] || m.dia} · ${mealLabel(m.mealKey)}
+        </div>
+        <div class="bank-result-text">${escapeHtml(m.texto)}</div>
       </div>
-      <div class="bank-result-text">${escapeHtml(m.texto)}</div>
     </div>`
     )
     .join("");
@@ -1230,17 +1359,23 @@ function activateTab(tab) {
   localStorage.setItem(TAB_KEY, tab);
 }
 
+const TAB_ICONS = { hoy: "sun", registro: "scale", historico: "trending", comidas: "search" };
+
 function initTabs() {
   const tabs = document.querySelectorAll(".tab-btn");
   const stored = localStorage.getItem(TAB_KEY);
   const initial = stored && [...tabs].some((t) => t.dataset.tab === stored) ? stored : "hoy";
-  tabs.forEach((btn) => btn.addEventListener("click", () => activateTab(btn.dataset.tab)));
+  tabs.forEach((btn) => {
+    btn.innerHTML = `${icon(TAB_ICONS[btn.dataset.tab], 18, "tab-icon")}<span>${btn.textContent}</span>`;
+    btn.addEventListener("click", () => activateTab(btn.dataset.tab));
+  });
   activateTab(initial);
 }
 
 /* ====================== Init ====================== */
 
 document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("brand-mark").innerHTML = icon("pulse", 22);
   initTheme();
   initTabs();
   buildActivePlanSection();
