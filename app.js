@@ -21,8 +21,32 @@ const MEAL_LABELS = {
   mm: "Media mañana", cena: "Cena",
 };
 
+const DAY_KEYS_FULL = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+const WEEKDAY_BY_GETDAY = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+
 function fasecolor(tipo) {
   return getComputedStyle(document.documentElement).getPropertyValue(`--fase-${tipo}`).trim();
+}
+
+function escapeAttr(str) {
+  return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function escapeHtml(str) {
+  return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function isoFromDate(d) {
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d - tz).toISOString().slice(0, 10);
+}
+
+function todayISO() {
+  return isoFromDate(new Date());
+}
+
+function todayKey() {
+  return WEEKDAY_BY_GETDAY[new Date().getDay()];
 }
 
 function parseFechaISO(str) {
@@ -74,6 +98,46 @@ function isDayKey(key) {
 
 function mealLabel(key) {
   return MEAL_LABELS[key] || key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+}
+
+// Construye una dieta editable a partir de una etapa histórica (plantilla de partida)
+function cloneActivePlanFromEtapa(etapaId) {
+  const etapa = etapas.find((e) => e.id === etapaId);
+  const plan = getPlan(etapa) || {};
+  const dias = {};
+  const notas_generales = [];
+
+  for (const key of Object.keys(plan)) {
+    if (isDayKey(key)) {
+      dias[key] = { ...plan[key] };
+    } else if (Array.isArray(plan[key])) {
+      notas_generales.push(`${mealLabel(key)}: ${plan[key].join(" / ")}`);
+    } else if (typeof plan[key] === "string") {
+      notas_generales.push(`${mealLabel(key)}: ${plan[key]}`);
+    }
+  }
+
+  DAY_KEYS_FULL.forEach((dk) => {
+    if (!dias[dk]) {
+      dias[dk] = dias.sabado_domingo ? { ...dias.sabado_domingo } : { comida: "", cena: "" };
+    }
+  });
+  delete dias.sabado_domingo;
+
+  const entrenamiento = {};
+  DAY_KEYS_FULL.forEach((dk) => {
+    entrenamiento[dk] = (etapa.entrenamiento_semanal && etapa.entrenamiento_semanal[dk]) || "";
+  });
+
+  return {
+    nombre: `Dieta a partir de ${formatFechaCorta(etapa.fecha)} (${FASE_LABELS[etapa.tipo_fase]})`,
+    basado_en_id: etapa.id,
+    fecha_inicio: todayISO(),
+    objetivo: etapa.objetivo || "",
+    notas_generales,
+    dias,
+    entrenamiento,
+  };
 }
 
 /* ====================== Estado ====================== */
@@ -284,8 +348,9 @@ function renderDetail(etapa) {
       <button class="close-btn" id="detail-close" aria-label="Cerrar">&times;</button>
     </div>
     <span class="badge"><span class="legend-dot" style="background:${fasecolor(etapa.tipo_fase)}"></span>${FASE_LABELS[etapa.tipo_fase]}${metric ? ` · ${metric.label} ${metric.value}` : ""}</span>
+    <button type="button" class="secondary-btn" id="use-as-template-btn" data-etapa-id="${etapa.id}" style="float:right;margin-top:-4px;">Usar como plantilla para mi dieta actual</button>
 
-    <div class="detail-block">
+    <div class="detail-block" style="clear:both;">
       <h4>Objetivo</h4>
       <p>${etapa.objetivo}</p>
     </div>
@@ -346,6 +411,14 @@ function openDetail(id) {
   const dialog = document.getElementById("detail-dialog");
   document.getElementById("detail-content").innerHTML = renderDetail(etapa);
   document.getElementById("detail-close").addEventListener("click", () => dialog.close());
+  document.getElementById("use-as-template-btn").addEventListener("click", () => {
+    if (loadActivePlan() && !confirm("Ya tienes una dieta actual guardada. ¿Sustituirla por esta plantilla? Se perderán los cambios que hayas hecho sobre ella.")) return;
+    saveActivePlan(cloneActivePlanFromEtapa(etapa.id));
+    planEditMode = true;
+    dialog.close();
+    buildActivePlanSection();
+    document.getElementById("active-plan-section").scrollIntoView({ behavior: "smooth" });
+  });
   if (typeof dialog.showModal === "function") dialog.showModal();
 }
 
@@ -453,6 +526,7 @@ function renderWeightLog() {
     document.getElementById("log-table-wrap").style.display = "none";
     statRow.innerHTML = "";
     chartWrap.innerHTML = "";
+    refreshActivePlanPesoIfViewing();
     return;
   }
 
@@ -491,6 +565,13 @@ function renderWeightLog() {
   `;
 
   buildLogChart(entries);
+  refreshActivePlanPesoIfViewing();
+}
+
+function refreshActivePlanPesoIfViewing() {
+  if (loadActivePlan() && !planEditMode && document.getElementById("active-plan-content")) {
+    buildActivePlanSection();
+  }
 }
 
 function buildLogChart(entries) {
@@ -551,6 +632,313 @@ function buildLogChart(entries) {
   });
 }
 
+/* ====================== Mi dieta actual ====================== */
+
+const PLAN_KEY = "nutri_plan_actual";
+const ADHERENCIA_KEY = "nutri_adherencia";
+let planEditMode = false;
+
+function loadActivePlan() {
+  try {
+    return JSON.parse(localStorage.getItem(PLAN_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function saveActivePlan(plan) {
+  localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+}
+
+function discardActivePlan() {
+  localStorage.removeItem(PLAN_KEY);
+}
+
+function loadAdherencia() {
+  try {
+    return JSON.parse(localStorage.getItem(ADHERENCIA_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveAdherencia(data) {
+  localStorage.setItem(ADHERENCIA_KEY, JSON.stringify(data));
+}
+
+function toggleMealDone(dateISO, mealKey, checked) {
+  const data = loadAdherencia();
+  if (!data[dateISO]) data[dateISO] = {};
+  data[dateISO][mealKey] = checked;
+  saveAdherencia(data);
+}
+
+// % de comidas marcadas como hechas en los últimos 7 días (incluye hoy)
+function computeWeekAdherence(plan) {
+  const data = loadAdherencia();
+  let total = 0;
+  let done = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = isoFromDate(d);
+    const wk = WEEKDAY_BY_GETDAY[d.getDay()];
+    const mealKeys = Object.keys((plan.dias && plan.dias[wk]) || {});
+    total += mealKeys.length;
+    const rec = data[iso] || {};
+    mealKeys.forEach((mk) => {
+      if (rec[mk]) done += 1;
+    });
+  }
+  return total ? Math.round((done / total) * 100) : null;
+}
+
+function renderPlanChooser() {
+  return `
+    <p class="section-sub">Todavía no tienes una dieta activa. Elige una etapa anterior como plantilla de partida — luego podrás editar libremente las comidas y el entrenamiento.</p>
+    <div class="compare-selects">
+      <div>
+        <label for="plan-template-select">Etapa plantilla</label>
+        <select id="plan-template-select">
+          ${etapas.map((e) => `<option value="${e.id}">${formatFechaCorta(e.fecha)} · ${FASE_LABELS[e.tipo_fase]} · ${pesoDisplay(e.composicion.peso_kg)}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <button type="button" id="plan-create-btn" class="primary-btn">Crear dieta a partir de esta plantilla</button>
+  `;
+}
+
+function renderPlanView(plan) {
+  const etapaBase = etapas.find((e) => e.id === plan.basado_en_id);
+  const wk = todayKey();
+  const iso = todayISO();
+  const meals = plan.dias[wk] || {};
+  const mealKeys = Object.keys(meals);
+  const adherenciaHoy = (loadAdherencia()[iso]) || {};
+  const doneToday = mealKeys.filter((mk) => adherenciaHoy[mk]).length;
+  const weekPct = computeWeekAdherence(plan);
+  const pesoActual = [...loadLog()].sort((a, b) => a.fecha.localeCompare(b.fecha)).pop();
+
+  return `
+    <div class="plan-banner">
+      <div>
+        <h3 style="margin:0 0 4px;">${escapeHtml(plan.nombre)}</h3>
+        <p style="margin:0;color:var(--text-secondary);font-size:13.5px;">${escapeHtml(plan.objetivo)}</p>
+        <p style="margin:6px 0 0;font-size:12px;color:var(--text-muted);">
+          ${etapaBase ? `Basada en la etapa del ${formatFechaCorta(etapaBase.fecha)} · ` : ""}Empezada el ${formatFechaCorta(plan.fecha_inicio)}
+        </p>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button type="button" id="plan-edit-btn" class="secondary-btn">Editar plan</button>
+        <button type="button" id="plan-discard-btn" class="secondary-btn">Elegir otra plantilla</button>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-tile"><div class="stat-value">${pesoActual ? pesoActual.peso.toFixed(1) + " kg" : "—"}</div><div class="stat-label">Peso actual</div></div>
+      <div class="stat-tile"><div class="stat-value" id="stat-comidas-hoy">${mealKeys.length ? `${doneToday}/${mealKeys.length}` : "—"}</div><div class="stat-label">Comidas hoy</div></div>
+      <div class="stat-tile"><div class="stat-value" id="stat-cumplimiento-semana">${weekPct == null ? "—" : weekPct + "%"}</div><div class="stat-label">Cumplimiento 7 días</div></div>
+    </div>
+
+    <div class="detail-block" style="margin-top:6px;">
+      <h4>Hoy es ${DAY_LABELS[wk]}${plan.entrenamiento[wk] ? ` · Entrenamiento: ${escapeHtml(plan.entrenamiento[wk])}` : ""}</h4>
+      ${
+        mealKeys.length
+          ? `<div class="checklist">${mealKeys
+              .map(
+                (mk) => `
+            <label class="checklist-item">
+              <input type="checkbox" class="meal-check" data-meal="${mk}" ${adherenciaHoy[mk] ? "checked" : ""} />
+              <span><strong>${mealLabel(mk)}:</strong> ${escapeHtml(meals[mk])}</span>
+            </label>`
+              )
+              .join("")}</div>`
+          : `<p class="empty-msg">No hay comidas definidas para hoy en este plan. Edítalo para añadirlas.</p>`
+      }
+    </div>
+  `;
+}
+
+function renderPlanEditor(plan) {
+  const mealsHtml = DAY_KEYS_FULL.map((dk) => {
+    const meals = plan.dias[dk] || {};
+    const mealKeys = Object.keys(meals).length ? Object.keys(meals) : ["desayuno", "comida", "merienda", "cena"];
+    return `
+      <details class="meal-day"${dk === todayKey() ? " open" : ""}>
+        <summary>${DAY_LABELS[dk]}</summary>
+        <div class="meal-rows-edit" data-day="${dk}">
+          ${mealKeys
+            .map(
+              (mk) => `
+            <div class="meal-edit-row" data-meal="${mk}">
+              <label>${mealLabel(mk)}</label>
+              <div style="display:flex;gap:6px;">
+                <textarea data-plan-day="${dk}" data-plan-meal="${mk}" rows="2">${escapeHtml(meals[mk] || "")}</textarea>
+                <button type="button" class="remove-meal-btn" title="Eliminar esta comida">&times;</button>
+              </div>
+            </div>`
+            )
+            .join("")}
+          <button type="button" class="add-meal-btn" data-add-day="${dk}">+ añadir comida</button>
+        </div>
+      </details>`;
+  }).join("");
+
+  return `
+    <div class="field-block">
+      <label for="plan-nombre-input">Nombre de la dieta</label>
+      <input type="text" id="plan-nombre-input" value="${escapeAttr(plan.nombre)}" />
+    </div>
+    <div class="field-block">
+      <label for="plan-objetivo-input">Objetivo</label>
+      <textarea id="plan-objetivo-input" rows="2">${escapeHtml(plan.objetivo)}</textarea>
+    </div>
+    <div class="field-block">
+      <h4>Entrenamiento semanal</h4>
+      <div class="train-edit-grid">
+        ${DAY_KEYS_FULL.map(
+          (dk) => `
+          <div class="train-edit-cell">
+            <label>${DAY_LABELS[dk]}</label>
+            <input type="text" data-train-day="${dk}" value="${escapeAttr(plan.entrenamiento[dk] || "")}" />
+          </div>`
+        ).join("")}
+      </div>
+    </div>
+    <div class="field-block">
+      <h4>Plan de comidas</h4>
+      ${mealsHtml}
+    </div>
+    ${
+      plan.notas_generales && plan.notas_generales.length
+        ? `<div class="field-block"><h4>Notas generales heredadas de la plantilla</h4><ul class="tip-list">${plan.notas_generales.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul></div>`
+        : ""
+    }
+    <div class="editor-actions">
+      <button type="button" id="plan-save-btn" class="primary-btn">Guardar plan</button>
+      <button type="button" id="plan-cancel-btn" class="secondary-btn">Cancelar</button>
+    </div>
+  `;
+}
+
+function attachEditorHandlers(plan) {
+  const content = document.getElementById("active-plan-content");
+
+  content.querySelectorAll(".remove-meal-btn").forEach((btn) => {
+    btn.addEventListener("click", () => btn.closest(".meal-edit-row").remove());
+  });
+
+  content.querySelectorAll(".add-meal-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const day = btn.dataset.addDay;
+      const name = prompt("Nombre de la comida (ej. desayuno, comida, merienda, cena, entre_horas):");
+      if (!name) return;
+      const key = name.trim().toLowerCase().replace(/\s+/g, "_");
+      if (!key) return;
+      const row = document.createElement("div");
+      row.className = "meal-edit-row";
+      row.dataset.meal = key;
+      row.innerHTML = `
+        <label>${mealLabel(key)}</label>
+        <div style="display:flex;gap:6px;">
+          <textarea data-plan-day="${day}" data-plan-meal="${key}" rows="2"></textarea>
+          <button type="button" class="remove-meal-btn" title="Eliminar esta comida">&times;</button>
+        </div>`;
+      row.querySelector(".remove-meal-btn").addEventListener("click", () => row.remove());
+      btn.before(row);
+    });
+  });
+
+  document.getElementById("plan-save-btn").addEventListener("click", () => {
+    const updated = { ...plan };
+    updated.nombre = document.getElementById("plan-nombre-input").value.trim() || plan.nombre;
+    updated.objetivo = document.getElementById("plan-objetivo-input").value.trim();
+
+    const entrenamiento = {};
+    content.querySelectorAll("[data-train-day]").forEach((input) => {
+      entrenamiento[input.dataset.trainDay] = input.value.trim();
+    });
+    updated.entrenamiento = entrenamiento;
+
+    const dias = {};
+    DAY_KEYS_FULL.forEach((dk) => (dias[dk] = {}));
+    content.querySelectorAll("[data-plan-day]").forEach((textarea) => {
+      const day = textarea.dataset.planDay;
+      const meal = textarea.dataset.planMeal;
+      const value = textarea.value.trim();
+      if (value) dias[day][meal] = value;
+    });
+    updated.dias = dias;
+
+    saveActivePlan(updated);
+    planEditMode = false;
+    buildActivePlanSection();
+  });
+
+  document.getElementById("plan-cancel-btn").addEventListener("click", () => {
+    planEditMode = false;
+    buildActivePlanSection();
+  });
+}
+
+function updatePlanStats(plan) {
+  const wk = todayKey();
+  const mealKeys = Object.keys(plan.dias[wk] || {});
+  const adherenciaHoy = loadAdherencia()[todayISO()] || {};
+  const doneToday = mealKeys.filter((mk) => adherenciaHoy[mk]).length;
+  const weekPct = computeWeekAdherence(plan);
+  const elComidas = document.getElementById("stat-comidas-hoy");
+  const elSemana = document.getElementById("stat-cumplimiento-semana");
+  if (elComidas) elComidas.textContent = mealKeys.length ? `${doneToday}/${mealKeys.length}` : "—";
+  if (elSemana) elSemana.textContent = weekPct == null ? "—" : weekPct + "%";
+}
+
+function attachViewHandlers(plan) {
+  const content = document.getElementById("active-plan-content");
+
+  content.querySelectorAll(".meal-check").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      toggleMealDone(todayISO(), checkbox.dataset.meal, checkbox.checked);
+      updatePlanStats(plan);
+    });
+  });
+
+  document.getElementById("plan-edit-btn").addEventListener("click", () => {
+    planEditMode = true;
+    buildActivePlanSection();
+  });
+
+  document.getElementById("plan-discard-btn").addEventListener("click", () => {
+    if (!confirm("¿Descartar la dieta actual y elegir otra plantilla? Esta acción no se puede deshacer.")) return;
+    discardActivePlan();
+    buildActivePlanSection();
+  });
+}
+
+function buildActivePlanSection() {
+  const content = document.getElementById("active-plan-content");
+  const plan = loadActivePlan();
+
+  if (!plan) {
+    content.innerHTML = renderPlanChooser();
+    document.getElementById("plan-create-btn").addEventListener("click", () => {
+      const id = Number(document.getElementById("plan-template-select").value);
+      saveActivePlan(cloneActivePlanFromEtapa(id));
+      planEditMode = true;
+      buildActivePlanSection();
+    });
+    return;
+  }
+
+  if (planEditMode) {
+    content.innerHTML = renderPlanEditor(plan);
+    attachEditorHandlers(plan);
+  } else {
+    content.innerHTML = renderPlanView(plan);
+    attachViewHandlers(plan);
+  }
+}
+
 /* ====================== Tema (claro/oscuro) ====================== */
 
 function initTheme() {
@@ -587,6 +975,7 @@ function initTheme() {
 
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
+  buildActivePlanSection();
   buildMainChart();
   buildFilterBar();
   buildTimeline();

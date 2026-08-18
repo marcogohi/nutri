@@ -18,8 +18,13 @@
     <button id="theme-toggle" type="button">◐ Auto</button>
   </header>
 
+  <section id="active-plan-section">
+    <h2>Mi dieta actual</h2>
+    <div id="active-plan-content"></div>
+  </section>
+
   <section id="chart-section">
-    <h2>Evolución del peso</h2>
+    <h2>Evolución del peso <span style="color:var(--text-muted);font-weight:400;font-size:13px;">(histórico)</span></h2>
     <p class="section-sub">Cada punto es una etapa registrada. Pasa el cursor para ver los datos, haz click para ver el detalle completo.</p>
     <div id="chart-wrap">
       <svg id="chart-svg"></svg>
@@ -35,7 +40,7 @@
 
   <section id="timeline-section">
     <h2>Etapas</h2>
-    <p class="section-sub">Filtra por tipo de fase y haz click en una etapa para ver el plan completo.</p>
+    <p class="section-sub">Filtra por tipo de fase y haz click en una etapa para ver el plan completo — o usarla como plantilla para tu dieta actual.</p>
     <div class="filter-bar" id="filter-bar"></div>
     <div id="timeline-grid"></div>
   </section>
