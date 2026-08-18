@@ -22,6 +22,7 @@
     <button type="button" class="tab-btn" data-tab="hoy" role="tab">Hoy</button>
     <button type="button" class="tab-btn" data-tab="registro" role="tab">Peso</button>
     <button type="button" class="tab-btn" data-tab="historico" role="tab">Histórico</button>
+    <button type="button" class="tab-btn" data-tab="comidas" role="tab">Comidas</button>
   </nav>
 
   <section id="active-plan-section" data-view="hoy">
@@ -92,6 +93,18 @@
       </div>
     </div>
     <div id="compare-grid"></div>
+  </section>
+
+  <section id="bank-section" data-view="comidas">
+    <h2>Banco de comidas</h2>
+    <p class="section-sub">Consulta todas las comidas reales de tus 7 etapas históricas. Para usar una en tu plan, ábrela desde el editor de "Mi dieta actual" con "Buscar alternativa".</p>
+    <div class="bank-filters">
+      <input type="text" id="bank-search" placeholder="Buscar por texto (ej. salmón, garbanzos)…" />
+      <select id="bank-meal-select"></select>
+    </div>
+    <div class="filter-bar" id="bank-fase-filter"></div>
+    <p class="section-sub" id="bank-count"></p>
+    <div id="bank-results"></div>
   </section>
 
 </div>

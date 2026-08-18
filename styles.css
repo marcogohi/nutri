@@ -840,6 +840,139 @@ table.log-table td.num { text-align: right; }
   accent-color: var(--series-line);
 }
 
+.checklist-item-wrap {
+  border-bottom: 1px solid var(--gridline);
+  padding-bottom: 10px;
+}
+
+.checklist-item-wrap:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.override-tag {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-style: italic;
+}
+
+.checklist-actions {
+  display: flex;
+  gap: 12px;
+  margin: 4px 0 0 26px;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--series-line);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.rotate-panel {
+  margin: 8px 0 4px 26px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rotate-panel[hidden] {
+  display: none;
+}
+
+.meal-edit-row .rotate-panel {
+  margin-left: 0;
+}
+
+.rotate-option {
+  border-bottom: 1px solid var(--gridline);
+  padding-bottom: 8px;
+}
+
+.rotate-option:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.rotate-option-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.rotate-option-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.editor-rotate-toggle-btn {
+  margin-top: 6px;
+}
+
+/* ---------- Banco de comidas ---------- */
+
+.bank-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.bank-filters input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: 13.5px;
+}
+
+.bank-filters select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: 13.5px;
+}
+
+.bank-result-item {
+  border-bottom: 1px solid var(--gridline);
+  padding: 10px 0;
+}
+
+.bank-result-item:last-child {
+  border-bottom: none;
+}
+
+.bank-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.bank-result-text {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
 .info-dot {
   display: inline-block;
   width: 14px;

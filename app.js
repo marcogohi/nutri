@@ -145,6 +145,56 @@ function cloneActivePlanFromEtapa(etapaId) {
 const etapas = [...NUTRI_DATA.etapas].sort((a, b) => a.fecha.localeCompare(b.fecha));
 let activeFilter = "todas";
 
+// Índice de todas las comidas reales de las 7 etapas: base para el banco buscable y las
+// sugerencias de rotación. Cada entrada es una comida concreta de un día de una etapa.
+const MEAL_BANK = (() => {
+  const bank = [];
+  etapas.forEach((etapa) => {
+    const plan = getPlan(etapa);
+    if (!plan) return;
+    for (const key of Object.keys(plan)) {
+      if (!isDayKey(key)) continue;
+      const meals = plan[key];
+      for (const mk of Object.keys(meals)) {
+        bank.push({
+          etapaId: etapa.id,
+          fecha: etapa.fecha,
+          tipo_fase: etapa.tipo_fase,
+          dia: key,
+          mealKey: mk,
+          texto: meals[mk],
+        });
+      }
+    }
+  });
+  return bank;
+})();
+
+const MEAL_TYPE_ORDER = ["desayuno", "almuerzo", "curro", "entre_horas", "comida", "merienda", "mm", "cena"];
+
+function mealBankTypes() {
+  const present = new Set(MEAL_BANK.map((m) => m.mealKey));
+  return MEAL_TYPE_ORDER.filter((k) => present.has(k));
+}
+
+// Alternativas reales para una comida: mismo tipo, preferiblemente misma fase; si no hay,
+// se abre a todas las fases. Nunca repite el texto ya mostrado ni duplicados entre sí.
+function getMealAlternatives(mealKey, tipoFase, excludeText, limit) {
+  let pool = MEAL_BANK.filter((m) => m.mealKey === mealKey && (!tipoFase || m.tipo_fase === tipoFase));
+  if (tipoFase && pool.length === 0) {
+    pool = MEAL_BANK.filter((m) => m.mealKey === mealKey);
+  }
+  const seen = new Set();
+  const result = [];
+  for (const m of pool) {
+    if (m.texto === excludeText || seen.has(m.texto)) continue;
+    seen.add(m.texto);
+    result.push(m);
+    if (result.length >= (limit || 6)) break;
+  }
+  return result;
+}
+
 /* ====================== Gráfico principal ====================== */
 
 function buildMainChart() {
@@ -667,10 +717,35 @@ function saveAdherencia(data) {
   localStorage.setItem(ADHERENCIA_KEY, JSON.stringify(data));
 }
 
+// Los registros de adherencia por comida son { done, texto } — texto solo si hoy comiste
+// una alternativa distinta a la del plan. Antiguos registros (booleanos simples) se normalizan.
+function normalizeMealRecord(rec) {
+  if (rec == null) return { done: false, texto: null };
+  if (typeof rec === "boolean") return { done: rec, texto: null };
+  return { done: !!rec.done, texto: rec.texto || null };
+}
+
 function toggleMealDone(dateISO, mealKey, checked) {
   const data = loadAdherencia();
   if (!data[dateISO]) data[dateISO] = {};
-  data[dateISO][mealKey] = checked;
+  const cur = normalizeMealRecord(data[dateISO][mealKey]);
+  data[dateISO][mealKey] = { done: checked, texto: cur.texto };
+  saveAdherencia(data);
+}
+
+// Marca una alternativa del banco como lo que realmente se comió hoy, sin tocar el plan guardado
+function setMealOverrideToday(dateISO, mealKey, texto) {
+  const data = loadAdherencia();
+  if (!data[dateISO]) data[dateISO] = {};
+  data[dateISO][mealKey] = { done: true, texto };
+  saveAdherencia(data);
+}
+
+function clearMealOverrideToday(dateISO, mealKey) {
+  const data = loadAdherencia();
+  if (!data[dateISO]) data[dateISO] = {};
+  const cur = normalizeMealRecord(data[dateISO][mealKey]);
+  data[dateISO][mealKey] = { done: cur.done, texto: null };
   saveAdherencia(data);
 }
 
@@ -688,7 +763,7 @@ function computeWeekAdherence(plan) {
     total += mealKeys.length;
     const rec = data[iso] || {};
     mealKeys.forEach((mk) => {
-      if (rec[mk]) done += 1;
+      if (normalizeMealRecord(rec[mk]).done) done += 1;
     });
   }
   return total ? Math.round((done / total) * 100) : null;
@@ -709,14 +784,94 @@ function renderPlanChooser() {
   `;
 }
 
+function renderChecklistItem(plan, mk, meals, etapaBase) {
+  const iso = todayISO();
+  const rec = normalizeMealRecord((loadAdherencia()[iso] || {})[mk]);
+  const displayText = rec.texto || meals[mk];
+
+  return `
+    <div class="checklist-item-wrap" data-meal="${mk}">
+      <label class="checklist-item">
+        <input type="checkbox" class="meal-check" data-meal="${mk}" ${rec.done ? "checked" : ""} />
+        <span><strong>${mealLabel(mk)}:</strong> <span class="meal-text">${escapeHtml(displayText)}</span>${rec.texto ? ` <span class="override-tag">(hoy, no el plan)</span>` : ""}</span>
+      </label>
+      <div class="checklist-actions">
+        <button type="button" class="link-btn rotate-toggle-btn" data-meal="${mk}">Ver alternativas</button>
+        ${rec.texto ? `<button type="button" class="link-btn revert-btn" data-meal="${mk}">Volver al plan</button>` : ""}
+      </div>
+      <div class="rotate-panel" data-meal="${mk}" hidden></div>
+    </div>
+  `;
+}
+
+function renderRotatePanel(plan, mk, etapaBase, excludeText, btnLabel) {
+  const alternatives = getMealAlternatives(mk, etapaBase ? etapaBase.tipo_fase : null, excludeText, 6);
+  if (!alternatives.length) {
+    return `<p class="empty-msg">No hay otras comidas de este tipo en el histórico.</p>`;
+  }
+  return alternatives
+    .map(
+      (alt) => `
+    <div class="rotate-option">
+      <div class="rotate-option-meta">${formatFechaCorta(alt.fecha)} · ${FASE_LABELS[alt.tipo_fase]} · ${DAY_LABELS[alt.dia] || alt.dia}</div>
+      <div class="rotate-option-text">${escapeHtml(alt.texto)}</div>
+      <button type="button" class="link-btn use-alt-btn" data-meal="${mk}" data-texto="${escapeAttr(alt.texto)}">${btnLabel || "Usar hoy"}</button>
+    </div>`
+    )
+    .join("");
+}
+
+function attachChecklistItemHandlers(plan, mk, meals, etapaBase) {
+  const wrap = document.querySelector(`.checklist-item-wrap[data-meal="${mk}"]`);
+  if (!wrap) return;
+
+  wrap.querySelector(".meal-check").addEventListener("change", (ev) => {
+    toggleMealDone(todayISO(), mk, ev.target.checked);
+    updatePlanStats(plan);
+  });
+
+  wrap.querySelector(".rotate-toggle-btn").addEventListener("click", () => {
+    const panel = wrap.querySelector(".rotate-panel");
+    const opening = panel.hasAttribute("hidden");
+    if (opening) {
+      const rec = normalizeMealRecord((loadAdherencia()[todayISO()] || {})[mk]);
+      panel.innerHTML = renderRotatePanel(plan, mk, etapaBase, rec.texto || meals[mk]);
+      panel.querySelectorAll(".use-alt-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setMealOverrideToday(todayISO(), mk, btn.dataset.texto);
+          refreshChecklistItem(plan, mk, meals, etapaBase);
+        });
+      });
+    }
+    panel.toggleAttribute("hidden", !opening);
+    wrap.querySelector(".rotate-toggle-btn").textContent = opening ? "Ocultar alternativas" : "Ver alternativas";
+  });
+
+  const revertBtn = wrap.querySelector(".revert-btn");
+  if (revertBtn) {
+    revertBtn.addEventListener("click", () => {
+      clearMealOverrideToday(todayISO(), mk);
+      refreshChecklistItem(plan, mk, meals, etapaBase);
+    });
+  }
+}
+
+function refreshChecklistItem(plan, mk, meals, etapaBase) {
+  const wrap = document.querySelector(`.checklist-item-wrap[data-meal="${mk}"]`);
+  if (!wrap) return;
+  wrap.outerHTML = renderChecklistItem(plan, mk, meals, etapaBase);
+  attachChecklistItemHandlers(plan, mk, meals, etapaBase);
+  updatePlanStats(plan);
+}
+
 function renderPlanView(plan) {
   const etapaBase = etapas.find((e) => e.id === plan.basado_en_id);
   const wk = todayKey();
   const iso = todayISO();
   const meals = plan.dias[wk] || {};
   const mealKeys = Object.keys(meals);
-  const adherenciaHoy = (loadAdherencia()[iso]) || {};
-  const doneToday = mealKeys.filter((mk) => adherenciaHoy[mk]).length;
+  const adherenciaHoy = loadAdherencia()[iso] || {};
+  const doneToday = mealKeys.filter((mk) => normalizeMealRecord(adherenciaHoy[mk]).done).length;
   const weekPct = computeWeekAdherence(plan);
   const pesoActual = [...loadLog()].sort((a, b) => a.fecha.localeCompare(b.fecha)).pop();
 
@@ -745,15 +900,7 @@ function renderPlanView(plan) {
       <h4>Hoy es ${DAY_LABELS[wk]}${plan.entrenamiento[wk] ? ` · Entrenamiento: ${escapeHtml(plan.entrenamiento[wk])}` : ""}</h4>
       ${
         mealKeys.length
-          ? `<div class="checklist">${mealKeys
-              .map(
-                (mk) => `
-            <label class="checklist-item">
-              <input type="checkbox" class="meal-check" data-meal="${mk}" ${adherenciaHoy[mk] ? "checked" : ""} />
-              <span><strong>${mealLabel(mk)}:</strong> ${escapeHtml(meals[mk])}</span>
-            </label>`
-              )
-              .join("")}</div>`
+          ? `<div class="checklist">${mealKeys.map((mk) => renderChecklistItem(plan, mk, meals, etapaBase)).join("")}</div>`
           : `<p class="empty-msg">No hay comidas definidas para hoy en este plan. Edítalo para añadirlas.</p>`
       }
     </div>
@@ -761,6 +908,7 @@ function renderPlanView(plan) {
 }
 
 function renderPlanEditor(plan) {
+  const etapaBase = etapas.find((e) => e.id === plan.basado_en_id);
   const mealsHtml = DAY_KEYS_FULL.map((dk) => {
     const meals = plan.dias[dk] || {};
     const mealKeys = Object.keys(meals).length ? Object.keys(meals) : ["desayuno", "comida", "merienda", "cena"];
@@ -777,6 +925,8 @@ function renderPlanEditor(plan) {
                 <textarea data-plan-day="${dk}" data-plan-meal="${mk}" rows="2">${escapeHtml(meals[mk] || "")}</textarea>
                 <button type="button" class="remove-meal-btn" title="Eliminar esta comida">&times;</button>
               </div>
+              <button type="button" class="link-btn editor-rotate-toggle-btn" data-day="${dk}" data-meal="${mk}">Buscar alternativa</button>
+              <div class="rotate-panel" data-day="${dk}" data-meal="${mk}" hidden></div>
             </div>`
             )
             .join("")}
@@ -822,12 +972,36 @@ function renderPlanEditor(plan) {
   `;
 }
 
+function wireEditorRotateButton(btn, plan, etapaBase) {
+  btn.addEventListener("click", () => {
+    const row = btn.closest(".meal-edit-row");
+    const textarea = row.querySelector("textarea[data-plan-meal]");
+    const panel = row.querySelector(".rotate-panel");
+    const opening = panel.hasAttribute("hidden");
+    if (opening) {
+      panel.innerHTML = renderRotatePanel(plan, btn.dataset.meal, etapaBase, textarea.value, "Usar esta");
+      panel.querySelectorAll(".use-alt-btn").forEach((altBtn) => {
+        altBtn.addEventListener("click", () => {
+          textarea.value = altBtn.dataset.texto;
+          panel.setAttribute("hidden", "");
+          btn.textContent = "Buscar alternativa";
+        });
+      });
+    }
+    panel.toggleAttribute("hidden", !opening);
+    btn.textContent = opening ? "Ocultar alternativas" : "Buscar alternativa";
+  });
+}
+
 function attachEditorHandlers(plan) {
   const content = document.getElementById("active-plan-content");
+  const etapaBase = etapas.find((e) => e.id === plan.basado_en_id);
 
   content.querySelectorAll(".remove-meal-btn").forEach((btn) => {
     btn.addEventListener("click", () => btn.closest(".meal-edit-row").remove());
   });
+
+  content.querySelectorAll(".editor-rotate-toggle-btn").forEach((btn) => wireEditorRotateButton(btn, plan, etapaBase));
 
   content.querySelectorAll(".add-meal-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -844,8 +1018,11 @@ function attachEditorHandlers(plan) {
         <div style="display:flex;gap:6px;">
           <textarea data-plan-day="${day}" data-plan-meal="${key}" rows="2"></textarea>
           <button type="button" class="remove-meal-btn" title="Eliminar esta comida">&times;</button>
-        </div>`;
+        </div>
+        <button type="button" class="link-btn editor-rotate-toggle-btn" data-day="${day}" data-meal="${key}">Buscar alternativa</button>
+        <div class="rotate-panel" data-day="${day}" data-meal="${key}" hidden></div>`;
       row.querySelector(".remove-meal-btn").addEventListener("click", () => row.remove());
+      wireEditorRotateButton(row.querySelector(".editor-rotate-toggle-btn"), plan, etapaBase);
       btn.before(row);
     });
   });
@@ -886,7 +1063,7 @@ function updatePlanStats(plan) {
   const wk = todayKey();
   const mealKeys = Object.keys(plan.dias[wk] || {});
   const adherenciaHoy = loadAdherencia()[todayISO()] || {};
-  const doneToday = mealKeys.filter((mk) => adherenciaHoy[mk]).length;
+  const doneToday = mealKeys.filter((mk) => normalizeMealRecord(adherenciaHoy[mk]).done).length;
   const weekPct = computeWeekAdherence(plan);
   const elComidas = document.getElementById("stat-comidas-hoy");
   const elSemana = document.getElementById("stat-cumplimiento-semana");
@@ -895,14 +1072,10 @@ function updatePlanStats(plan) {
 }
 
 function attachViewHandlers(plan) {
-  const content = document.getElementById("active-plan-content");
+  const etapaBase = etapas.find((e) => e.id === plan.basado_en_id);
+  const meals = plan.dias[todayKey()] || {};
 
-  content.querySelectorAll(".meal-check").forEach((checkbox) => {
-    checkbox.addEventListener("change", () => {
-      toggleMealDone(todayISO(), checkbox.dataset.meal, checkbox.checked);
-      updatePlanStats(plan);
-    });
-  });
+  Object.keys(meals).forEach((mk) => attachChecklistItemHandlers(plan, mk, meals, etapaBase));
 
   document.getElementById("plan-edit-btn").addEventListener("click", () => {
     planEditMode = true;
@@ -972,6 +1145,81 @@ function initTheme() {
   });
 }
 
+/* ====================== Banco de comidas ====================== */
+
+let bankActiveFases = new Set();
+
+function buildBankSection() {
+  const mealSelect = document.getElementById("bank-meal-select");
+  mealSelect.innerHTML = `<option value="">Todos los tipos de comida</option>${mealBankTypes()
+    .map((mk) => `<option value="${mk}">${mealLabel(mk)}</option>`)
+    .join("")}`;
+
+  const faseBar = document.getElementById("bank-fase-filter");
+  const opts = [{ key: "todas", label: "Todas" }, ...FASE_ORDER.map((k) => ({ key: k, label: FASE_LABELS[k] }))];
+  faseBar.innerHTML = opts
+    .map(
+      (opt) => `
+    <button type="button" class="chip" data-fase="${opt.key}" aria-pressed="${opt.key === "todas" ? "true" : "false"}">
+      ${opt.key === "todas" ? opt.label : `<span class="legend-dot" style="background:${fasecolor(opt.key)}"></span>${opt.label}`}
+    </button>`
+    )
+    .join("");
+
+  faseBar.querySelectorAll(".chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const fase = chip.dataset.fase;
+      if (fase === "todas") {
+        bankActiveFases.clear();
+      } else {
+        bankActiveFases.has(fase) ? bankActiveFases.delete(fase) : bankActiveFases.add(fase);
+      }
+      faseBar.querySelectorAll(".chip").forEach((c) => {
+        c.setAttribute("aria-pressed", String(c.dataset.fase === "todas" ? bankActiveFases.size === 0 : bankActiveFases.has(c.dataset.fase)));
+      });
+      renderBankResults();
+    });
+  });
+
+  document.getElementById("bank-search").addEventListener("input", renderBankResults);
+  mealSelect.addEventListener("change", renderBankResults);
+
+  renderBankResults();
+}
+
+function renderBankResults() {
+  const query = document.getElementById("bank-search").value.trim().toLowerCase();
+  const mealFilter = document.getElementById("bank-meal-select").value;
+
+  const filtered = MEAL_BANK.filter(
+    (m) =>
+      (!mealFilter || m.mealKey === mealFilter) &&
+      (bankActiveFases.size === 0 || bankActiveFases.has(m.tipo_fase)) &&
+      (!query || m.texto.toLowerCase().includes(query))
+  );
+
+  document.getElementById("bank-count").textContent = `${filtered.length} comida${filtered.length === 1 ? "" : "s"} encontrada${filtered.length === 1 ? "" : "s"}`;
+
+  const results = document.getElementById("bank-results");
+  if (!filtered.length) {
+    results.innerHTML = `<p class="empty-msg">No hay comidas que coincidan con este filtro.</p>`;
+    return;
+  }
+
+  results.innerHTML = filtered
+    .map(
+      (m) => `
+    <div class="bank-result-item">
+      <div class="bank-result-meta">
+        <span class="legend-dot" style="background:${fasecolor(m.tipo_fase)}"></span>
+        ${formatFechaCorta(m.fecha)} · ${FASE_LABELS[m.tipo_fase]} · ${DAY_LABELS[m.dia] || m.dia} · ${mealLabel(m.mealKey)}
+      </div>
+      <div class="bank-result-text">${escapeHtml(m.texto)}</div>
+    </div>`
+    )
+    .join("");
+}
+
 /* ====================== Pestañas ====================== */
 
 const TAB_KEY = "nutri_tab_activa";
@@ -1001,5 +1249,6 @@ document.addEventListener("DOMContentLoaded", () => {
   buildTimeline();
   buildComparador();
   buildWeightLog();
+  buildBankSection();
   window.addEventListener("resize", () => {}); // el viewBox ya es responsive, no se requiere recalcular
 });
