@@ -5,7 +5,6 @@ const NUTRI_DATA = {
     "altura_m": 1.82,
     "fecha_nacimiento": "1991-09-07",
     "deporte": "CrossFit",
-    "nutricionista": "Josu Zubillaga",
     "fuente": "7 planes dietéticos históricos (2019-2022), duplicados eliminados"
   },
   "etapas": [
